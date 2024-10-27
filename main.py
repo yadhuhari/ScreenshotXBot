@@ -46,6 +46,25 @@ def generate_stream_link(media_msg):
     file_id = pack_id(media_msg)
     return f"{Config.HOST}/stream/{file_id}"
 
+def gen_ik_buttons():
+    btns = []
+    i_keyboard = []
+    for i in range(2, 11):
+        i_keyboard.append(
+            InlineKeyboardButton(
+                f"{i}",
+                f"scht+{i}"
+            )
+        )
+        if (i>2) and (i%2) == 1:
+            btns.append(i_keyboard)
+            i_keyboard = []
+        if i==10:
+            btns.append(i_keyboard)
+    btns.append([InlineKeyboardButton('Manual Screenshots!', 'mscht')])
+    btns.append([InlineKeyboardButton('Trim Video!', 'trim')])
+    return btns
+
 @Robot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_photo(
