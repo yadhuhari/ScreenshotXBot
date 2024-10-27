@@ -1,4 +1,5 @@
-from pyrogram import client, filters
+from pyrogram import client, filters, ForceReply
+import asyncio
 from pyrogram.typed import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import random
 
@@ -85,6 +86,17 @@ async def settings(client, message):
         photo=random.choice(PICS),
         caption="""𝗛𝗲𝗿𝗲 𝗬𝗼𝘂 𝗰𝗮𝗻 𝗰𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗲 𝗺𝘆 𝗯𝗲𝗵𝗮𝘃𝗶𝗼𝗿.
 
-𝗣𝗿𝗲𝘀𝘀 𝘁𝗵𝗲 𝗯𝘂𝘁𝘁𝗼𝗻 𝘁𝗼 𝗰𝗵𝗮𝗻𝗴𝗲 𝘁𝗵𝗲 𝘀𝗲𝘁𝘁𝗶𝗻𝗴𝘀.""",
-        reply_markup=InlineKeyboardMarkup( [[
-            InlineKeyboardButton("
+𝗣𝗿𝗲𝘀𝘀 𝘁𝗵𝗲 𝗯𝘂𝘁𝘁𝗼𝗻 𝘁𝗼 𝗰𝗵𝗮𝗻𝗴𝗲 𝘁𝗵𝗲 𝘀𝗲𝘁𝘁𝗶𝗻𝗴𝘀."""
+    )
+
+@Robot.on_callback_query(filters.create(lambda _, query: query.data.startswith('mscht')))
+async def _(c, m):
+    dur = m.message.text.markdown.split('\n')[-1]
+    await m.message.delete(True)
+    await c.send_message(
+        m.from_user.id,
+        f'#𝗺𝗮𝗻𝘂𝗮𝗹_𝘀𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁\n\n{dur}\n\n𝗡𝗼𝘄 𝘀𝗲𝗻𝗱 𝘆𝗼𝘂𝗿 𝗹𝗶𝘀𝘁 𝗼𝗳 𝘀𝗲𝗰𝗼𝗻𝗱𝘀 𝘀𝗲𝗽𝗮𝗿𝗮𝘁𝗲𝗱 𝗯𝘆 ,(𝗰𝗼𝗺𝗺𝗮).\n𝗘𝗴: 𝟬,𝟭𝟬,𝟰𝟬,𝟲𝟬,𝟭𝟮𝟬.
+𝗧𝗵𝗶𝘀 𝘄𝗶𝗹𝗹 𝗴𝗲𝗻𝗲𝗿𝗮𝘁𝗲 𝘀𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁𝘀 𝗮𝘁 𝟬, 𝟭𝟬, 𝟰𝟬, 𝟲𝟬, 𝗮𝗻𝗱 𝟭𝟮𝟬 𝘀𝗲𝗰𝗼𝗻𝗱𝘀. \n\n1. 𝟭. 𝗧𝗵𝗲 𝗹𝗶𝘀𝘁 𝗰𝗮𝗻 𝗵𝗮𝘃𝗲 𝗮 𝗺𝗮𝘅𝗶𝗺𝘂𝗺 𝗼𝗳 𝟭𝟬 𝘃𝗮𝗹𝗶𝗱 𝗽𝗼𝘀𝗶𝘁𝗶𝗼𝗻𝘀.\n2. 𝟮. 𝗧𝗵𝗲 𝗽𝗼𝘀𝗶𝘁𝗶𝗼𝗻 𝗵𝗮𝘀 𝘁𝗼 𝗯𝗲 𝗴𝗿𝗲𝗮𝘁𝗲𝗿 𝘁𝗵𝗮𝗻 𝗼𝗿 𝗲𝗾𝘂𝗮𝗹 𝘁𝗼 𝟬, 𝗼𝗿 𝗹𝗲𝘀𝘀 𝘁𝗵𝗮𝗻 𝘁𝗵𝗲 𝘃𝗶𝗱𝗲𝗼 𝗹𝗲𝗻𝗴𝘁𝗵 𝗶𝗻 𝗼𝗿𝗱𝗲𝗿 𝘁𝗼 𝗯𝗲 𝘃𝗮𝗹𝗶𝗱.',
+        reply_to_message_id=m.message.reply_to_message.message_id,
+        reply_markup=ForceReply()
+    )
