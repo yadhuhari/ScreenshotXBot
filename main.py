@@ -150,3 +150,55 @@ async def _(c, m):
         reply_to_message_id=m.message.reply_to_message.message_id,
         reply_markup=ForceReply()
     )
+
+@ScreenShotBot.on_message(filters.private & filters.media)
+async def _(c, m):
+    
+    chat_id = m.chat.id   
+    if not await c.db.is_user_exist(chat_id):
+        await c.db.add_user(chat_id)
+        await c.send_message(
+            1002413846805,
+            f"New User [{m.from_user.first_name}](tg://user?id={chat_id}) started."
+        )
+    
+    ban_status = await c.db.get_ban_status(chat_id)
+    if ban_status['is_banned']:
+        if (datetime.date.today() - datetime.date.fromisoformat(ban_status['banned_on'])).days > ban_status['ban_duration']:
+            await c.db.remove_ban(chat_id)
+        else:
+            await m.reply_text(
+                f"Sorry Dear, You misused me. So you are **Blocked!**.\n\nBlock Reason: __{ban_status['ban_reason']}__",
+                quote=True
+            )
+            return
+    
+    if m.document:
+        if "video" not in m.document.mime_type:
+            await m.reply_text(f"**😟 Sorry! Only support Media Files.**\n**Your File type :** `{m.document.mime_type}.`", quote=True)
+
+    if not is_valid_file(m):
+        return
+    
+    snt = await m.reply_text("𝗛𝗶 𝘁𝗵𝗲𝗿𝗲, 𝗣𝗹𝗲𝗮𝘀𝗲 𝘄𝗮𝗶𝘁 𝘄𝗵𝗶𝗹𝗲 𝗜'𝗺 𝗴𝗲𝘁𝘁𝗶𝗻𝗴 𝗲𝘃𝗲𝗿𝘆𝘁𝗵𝗶𝗻𝗴 𝗿𝗲𝗮𝗱𝘆 𝘁𝗼 𝗽𝗿𝗼𝗰𝗲𝘀𝘀 𝘆𝗼𝘂𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁!", quote=True)
+    
+    file_link = generate_stream_link(m)
+    
+    duration = await get_duration(file_link)
+    if isinstance(duration, str):
+        await snt.edit_text("😟 𝗦𝗼𝗿𝗿𝘆! 𝗜 𝗰𝗮𝗻𝗻𝗼𝘁 𝗼𝗽𝗲𝗻 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲.")
+        l = await m.forward(Config.LOG_CHANNEL)
+        await l.reply_text(f'stream link : {file_link}\n\n {duration}', True)
+        return
+    
+    btns = gen_ik_buttons()
+    
+    if duration >= 600:
+        btns.append([InlineKeyboardButton('Generate Sample Video!', 'smpl')])
+    
+    await snt.edit_text(
+        text=f"""𝗛𝗶, 𝗖𝗵𝗼𝗼𝘀𝗲 𝘁𝗵𝗲 𝗻𝘂𝗺𝗯𝗲𝗿 𝗼𝗳 𝘀𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁𝘀 𝘆𝗼𝘂 𝗻𝗲𝗲𝗱.
+
+𝗧𝗼𝘁𝗮𝗹 𝗱𝘂𝗿𝗮𝘁𝗶𝗼𝗻: {datetime.timedelta(seconds=duration)} ({duration}𝘀)""",
+        reply_markup=InlineKeyboardMarkup(btns)
+    )
