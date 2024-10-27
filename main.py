@@ -67,6 +67,95 @@ def gen_ik_buttons():
     btns.append([InlineKeyboardButton('Trim Video!', 'trim')])
     return btns
 
+async def sample_fn(c, m):
+    chat_id = m.from_user.id
+    media_msg = m.message.reply_to_message
+    if media_msg.empty:
+        await edit_message_text(m, text='Why did you delete the file 😠, Now i cannot help you 😒.')
+        c.CURRENT_PROCESSES[chat_id] -= 1
+        return
+    
+    uid = str(uuid.uuid4())
+    output_folder = SMPL_OP_FLDR.joinpath(uid)
+    if not output_folder.exists():
+        os.makedirs(output_folder)
+    
+    if TRACK_CHANNEL:
+        tr_msg = await media_msg.forward(TRACK_CHANNEL)
+        await tr_msg.reply_text(f"User id: `{chat_id}`")
+    
+    if media_msg.media:
+        typ = 1
+    else:
+        typ = 2
+    
+    try:
+        start_time = time.time()
+        
+        await edit_message_text(m, text='𝗣𝗿𝗼𝗰𝗲𝘀𝘀𝗶𝗻𝗴 𝘆𝗼𝘂𝗿 𝗿𝗲𝗾𝘂𝗲𝘀𝘁, 𝗣𝗹𝗲𝗮𝘀𝗲 𝘄𝗮𝗶𝘁! 😴')
+        
+        if typ == 2:
+            file_link = media_msg.text
+        else:
+            file_link = generate_stream_link(media_msg)
+        
+        await edit_message_text(m, text='😀 𝗚𝗲𝗻𝗲𝗿𝗮𝘁𝗶𝗻𝗴 𝗦𝗮𝗺𝗽𝗹𝗲 𝗩𝗶𝗱𝗲𝗼! 𝗧𝗵𝗶𝘀 𝗺𝗶𝗴𝗵𝘁 𝘁𝗮𝗸𝗲 𝘀𝗼𝗺𝗲 𝘁𝗶𝗺𝗲.')
+        
+        duration = await get_duration(file_link)
+        if isinstance(duration, str):
+            await edit_message_text(m, text="😟 Sorry! I cannot open the file.")
+            l = await media_msg.forward(Config.LOG_CHANNEL)
+            await l.reply_text(f'stream link : {file_link}\n\nSample video requested\n\n{duration}', True)
+            c.CURRENT_PROCESSES[chat_id] -= 1
+            return
+        
+        reduced_sec = duration - int(duration*10 / 100)
+        print(f"Total seconds: {duration}, Reduced seconds: {reduced_sec}")
+        sample_duration = await c.db.get_sample_duration(chat_id)
+        
+        start_at = get_random_start_at(reduced_sec, sample_duration)
+        
+        sample_file = output_folder.joinpath(f'sample_video.mkv')
+        subtitle_option = await fix_subtitle_codec(file_link)
+        
+        ffmpeg_cmd = f"ffmpeg -hide_banner -ss {start_at} -i {shlex.quote(file_link)} -t {sample_duration} -map 0 -c copy {subtitle_option} {sample_file}"
+        output = await run_subprocess(ffmpeg_cmd)
+        #print(output[1].decode())
+        
+        if not sample_file.exists():
+            await edit_message_text(m, text='😟 Sorry! Sample video generation failed possibly due to some infrastructure failure 😥.')
+            
+            l = await media_msg.forward(Config.LOG_CHANNEL)
+            await l.reply_text(f'stream link : {file_link}\n\n duration {sample_duration} sample video generation failed\n\n{output[1].decode()}', True)
+            c.CURRENT_PROCESSES[chat_id] -= 1
+            return
+        
+        thumb = await generate_thumbnail_file(sample_file, uid)
+        
+        await edit_message_text(m, text=f'🤓 𝗦𝗮𝗺𝗽𝗹𝗲 𝘃𝗶𝗱𝗲𝗼 𝘄𝗮𝘀 𝗴𝗲𝗻𝗲𝗿𝗮𝘁𝗲𝗱 𝘀𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆!, 𝗡𝗼𝘄 𝘀𝘁𝗮𝗿𝘁𝗶𝗻𝗴 𝘁𝗼 𝘂𝗽𝗹𝗼𝗮𝗱!')
+        
+        await media_msg.reply_chat_action("upload_video")
+        
+        await media_msg.reply_video(
+                video=sample_file, 
+                quote=True,
+                caption=f"📸 𝗦𝗮𝗺𝗽𝗹𝗲 𝘃𝗶𝗱𝗲𝗼. {sample_duration}s 𝗳𝗿𝗼𝗺 {datetime.timedelta(seconds=start_at)}",
+                duration=sample_duration,
+                thumb=thumb,
+                supports_streaming=True
+            )
+        
+        await edit_message_text(m, text=f'𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 𝗽𝗿𝗼𝗰𝗲𝘀𝘀 𝗶𝗻 {datetime.timedelta(seconds=int(time.time()-start_time))}\n\n\n\n©️ @RoboverseTG')
+        c.CURRENT_PROCESSES[chat_id] -= 1
+        
+    except:
+        traceback.print_exc()
+        await edit_message_text(m, text='😟 Sorry! Sample video generation failed possibly due to some infrastructure failure 😥.')
+        
+        l = await media_msg.forward(Config.LOG_CHANNEL)
+        await l.reply_text(f'sample video requested and some error occoured\n\n{traceback.format_exc()}', True)
+        c.CURRENT_PROCESSES[chat_id] -= 1
+
 @Robot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_photo(
