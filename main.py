@@ -42,6 +42,10 @@ async def get_duration(input_file_link):
         return duration
     return 'No duration!'
 
+def generate_stream_link(media_msg):
+    file_id = pack_id(media_msg)
+    return f"{Config.HOST}/stream/{file_id}"
+
 @Robot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_photo(
