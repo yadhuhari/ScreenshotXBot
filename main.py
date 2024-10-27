@@ -1,7 +1,8 @@
 from pyrogram import client, filters, ForceReply
 import asyncio
-from pyrogram.typed import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 import random
+from pyrogram.errors import FloodWait
 
 Robot = Client(
   name="ScreenshotGenRobot",
@@ -28,6 +29,18 @@ def is_valid_file(msg):
 
 def is_url(text):
     return text.startswith('http')
+
+async def get_duration(input_file_link):
+    ffmpeg_dur_cmd = f"ffprobe -v error -show_entries format=duration -of csv=p=0:s=x -select_streams v:0 {shlex.quote(input_file_link)}"
+    #print(ffmpeg_dur_cmd)
+    out, err = await run_subprocess(ffmpeg_dur_cmd)
+    out = out.decode().strip()
+    if not out:
+        return err.decode()
+    duration = round(float(out))
+    if duration:
+        return duration
+    return 'No duration!'
 
 @Robot.on_message(filters.command("start"))
 async def start(client, message):
