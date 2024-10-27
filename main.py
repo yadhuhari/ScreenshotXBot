@@ -17,6 +17,18 @@ PICS = [
  "http://ibb.co/B4Cp2yz"
 ]
 
+def is_valid_file(msg):
+    if not msg.media:
+        return False
+    if msg.video:
+        return True
+    if (msg.document) and any(mime in msg.document.mime_type for mime in ['video', "application/octet-stream"]):
+        return True
+    return False
+
+def is_url(text):
+    return text.startswith('http')
+
 @Robot.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_photo(
