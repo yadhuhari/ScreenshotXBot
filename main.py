@@ -240,9 +240,8 @@ async def _(c, m):
         reply_markup=ForceReply()
     )
 
-@ScreenShotBot.on_message(filters.private & filters.media)
+@Robot.on_message(filters.private & filters.media)
 async def _(c, m):
-    
     chat_id = m.chat.id   
     if not await c.db.is_user_exist(chat_id):
         await c.db.add_user(chat_id)
@@ -291,3 +290,12 @@ async def _(c, m):
 𝗧𝗼𝘁𝗮𝗹 𝗱𝘂𝗿𝗮𝘁𝗶𝗼𝗻: {datetime.timedelta(seconds=duration)} ({duration}𝘀)""",
         reply_markup=InlineKeyboardMarkup(btns)
     )
+
+@Robot.on_callback_query(filters.create(lambda _, query: query.data.startswith('smpl')))
+async def _(c, m):
+    asyncio.create_task(sample_fn(c, m))
+
+
+
+print("Bot Started")
+Robot.run()
